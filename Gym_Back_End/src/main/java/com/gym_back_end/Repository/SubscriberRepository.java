@@ -13,4 +13,11 @@ public interface SubscriberRepository extends JpaRepository<Subscriber, Integer>
 
     @Query("SELECT s FROM Subscriber s WHERE s.subscriptionEnd < :today")
     List<Subscriber> findExpiredSubscribers(LocalDate today);
+
+    // 1️⃣ Search by partial name (case insensitive)
+    @Query("SELECT s FROM Subscriber s WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', :name, '%'))")
+    List<Subscriber> findByNameContainingIgnoreCase(String name);
+
+    // 2️⃣ Find by exact id
+    Subscriber findById(int id);
 }

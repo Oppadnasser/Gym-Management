@@ -1,5 +1,6 @@
 package com.gym_back_end.Models;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
@@ -11,9 +12,38 @@ public class Subscriber {
     private Integer id;
 
     private String name;
+    @JsonFormat(shape =  JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate subscriptionStart;
+    @JsonFormat(shape =  JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate subscriptionEnd;
-    private String photoUrl;
+    private String phone;
+    private int age;
+    private String photo_url;
+
+    public String getPhoto_url() {
+        return photo_url;
+    }
+
+    public void setPhoto_url(String photo_url) {
+        this.photo_url = photo_url;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+    public Subscriber(){}
 
     // Getters and setters
 
@@ -49,13 +79,6 @@ public class Subscriber {
         this.subscriptionEnd = subscriptionEnd;
     }
 
-    public String getPhotoUrl() {
-        return photoUrl;
-    }
-
-    public void setPhotoUrl(String photoUrl) {
-        this.photoUrl = photoUrl;
-    }
 }
 
 

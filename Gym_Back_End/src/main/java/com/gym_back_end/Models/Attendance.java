@@ -12,9 +12,9 @@ public class Attendance {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    private LocalDate date;
-    private LocalTime timeIn;
-    private LocalTime timeOut;
+    private LocalDate attendance_date;
+    private LocalTime time_in;
+    private LocalTime time_out;
 
     @ManyToOne
     @JoinColumn(name = "subscriber_id")
@@ -32,27 +32,27 @@ public class Attendance {
     }
 
     public LocalDate getDate() {
-        return date;
+        return attendance_date;
     }
 
-    public void setDate(LocalDate date) {
-        this.date = date;
+    public void setDate(LocalDate attendance_date) {
+        this.attendance_date = attendance_date;
     }
 
     public LocalTime getTimeIn() {
-        return timeIn;
+        return time_in;
     }
 
-    public void setTimeIn(LocalTime timeIn) {
-        this.timeIn = timeIn;
+    public void setTimeIn(LocalTime time_in) {
+        this.time_in = time_in;
     }
 
     public LocalTime getTimeOut() {
-        return timeOut;
+        return time_out;
     }
 
-    public void setTimeOut(LocalTime timeOut) {
-        this.timeOut = timeOut;
+    public void setTimeOut(LocalTime time_out) {
+        this.time_out = time_out;
     }
 
     public Subscriber getSubscriber() {

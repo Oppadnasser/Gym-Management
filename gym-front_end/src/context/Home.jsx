@@ -1,0 +1,17 @@
+import React from "react";
+import Navbar from "../components/Navbar.jsx";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Expired from "../components/Expired.jsx";
+import CurrentSubscribers from "../components/CurrentSubscribers";
+
+export default function Home(){
+    return(
+        <div>
+            <Navbar/>
+            <Routes>
+                <Route path="/" element={<CurrentSubscribers/>}/>
+                <Route path="/expired" element={<Expired/>}/>
+            </Routes>
+        </div>
+    )
+}

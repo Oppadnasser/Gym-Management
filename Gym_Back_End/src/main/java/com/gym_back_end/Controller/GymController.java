@@ -1,5 +1,8 @@
 package com.gym_back_end.Controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.gym_back_end.Models.*;
 import com.gym_back_end.Service.GymService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,10 +14,11 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/subscribers")
-@CrossOrigin(origins = "*")
+
 public class GymController {
 
     private final GymService service;
@@ -28,29 +32,35 @@ public class GymController {
 
     // A
     @GetMapping
-    public List<Subscriber> getAllSubscribers() {
-        return service.getAllSubscribers();
+    public ResponseEntity<List<Subscriber>> getAllSubscribers() throws IOException {
+        List<Subscriber> subscribers = service.getAllSubscribers();
+        return ResponseEntity.ok(subscribers);
     }
-
     // B
     @GetMapping("/expiring-soon")
-    public List<Subscriber> getSubscribersExpiringSoon() {
+    public List<Subscriber> getSubscribersExpiringSoon() throws IOException {
         return service.getSubscribersExpiringSoon();
     }
 
     // C
     @GetMapping("/expired")
-    public List<Subscriber> getExpiredSubscribers() {
+    public List<Subscriber> getExpiredSubscribers() throws IOException {
         return service.getExpiredSubscribers();
     }
 
     // D
-    @PostMapping(consumes = {"multipart/form-data"})
+    @PostMapping("/new-subscriber")
     public Subscriber addSubscriber(
-            @RequestPart("subscriber") Subscriber subscriber,
-            @RequestPart(value = "photo", required = false) MultipartFile photo
+            @RequestParam("subscriber") String subscriberJson,
+            @RequestParam(value = "photo", required = false) MultipartFile photo,
+            @RequestParam int price
     ) throws IOException {
-        return service.addSubscriber(subscriber, photo);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        Subscriber subscriber = mapper.readValue(subscriberJson, Subscriber.class);
+        System.out.println("in new");
+        return service.addSubscriber(subscriber, photo, price);
     }
 
     // E
@@ -67,25 +77,47 @@ public class GymController {
     }
 
     // G
-    @PutMapping("/{id}/renew")
+    @PutMapping("/renew")
     public Subscriber renewSubscription(
-            @PathVariable Integer id,
-            @RequestParam LocalDate newStart,
-            @RequestParam LocalDate newEnd,
-            @RequestParam Double price
+            @RequestParam Integer id,
+            @RequestParam Integer months,
+            @RequestParam boolean today,
+            @RequestParam double price
     ) {
-        return service.renewSubscription(id, newStart, newEnd, price);
+        LocalDate start;
+
+        if(today){
+            start = LocalDate.now();
+        }
+        else {
+            start = null;
+        }
+        return service.renewSubscription(id, start, months, price);
     }
 
     // H
-    @PostMapping("/{subscriberId}/enter")
-    public Attendance enterSubscriber(@PathVariable Integer subscriberId) {
-        return service.enterSubscriber(subscriberId);
+    @PostMapping("/enter")
+    public ResponseEntity<String> enterSubscriber(@RequestParam int id) {
+        return service.enterSubscriber(id);
     }
 
     // I
-    @PutMapping("/exit/{attendanceId}")
-    public Attendance exitSubscriber(@PathVariable Integer attendanceId) {
-        return service.exitSubscriber(attendanceId);
+    @PutMapping("/exit")
+    public ResponseEntity<String> exitSubscriber(@RequestParam int id) {
+        return service.exitSubscriber(id);
     }
+
+    // Search by name
+    @GetMapping("/search/name")
+    public List<Subscriber> searchByName(@RequestParam String name) {
+        return service.searchByName(name);
+    }
+
+    // Search by id
+    @GetMapping("/subscribers/search/id")
+    public Subscriber searchById(@RequestParam int id) {
+        return service.searchById(id);
+    }
+
+
 }

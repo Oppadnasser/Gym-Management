@@ -10,8 +10,8 @@ public class HistoricalSubscription {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private LocalDate start_date;
+    private LocalDate end_date;
     private Double price;
 
     @ManyToOne
@@ -29,19 +29,19 @@ public class HistoricalSubscription {
     }
 
     public LocalDate getStartDate() {
-        return startDate;
+        return start_date;
     }
 
-    public void setStartDate(LocalDate startDate) {
-        this.startDate = startDate;
+    public void setStartDate(LocalDate start_date) {
+        this.start_date = start_date;
     }
 
     public LocalDate getEndDate() {
-        return endDate;
+        return end_date;
     }
 
-    public void setEndDate(LocalDate endDate) {
-        this.endDate = endDate;
+    public void setEndDate(LocalDate end_date) {
+        this.end_date = end_date;
     }
 
     public Double getPrice() {
