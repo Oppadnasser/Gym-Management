@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useSubscriber } from "../context/SubscriberContext";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import { Modal, Button, Form, Table } from "react-bootstrap";
 import {FaCheck} from "react-icons/fa";
 export default function CurrentSubscribers() {
+  const navigate = useNavigate();
   const { subscribers, setSubscribers } = useSubscriber();
   const [message, setMessage] = useState("");
   const [price, setPrice] = useState(0);
@@ -26,6 +28,7 @@ export default function CurrentSubscribers() {
       try {
         const response = await axios.get("http://localhost:8080/api/subscribers");
         setSubscribers(response.data);
+        console.log(response.data[0].subscriptionStart);
       } catch (error) {
         console.error("Error fetching subscribers:", error);
       }
@@ -111,7 +114,13 @@ const exit = async (id,e)=>{
     e.target.innerHTML = "&#10003;"
     setTimeout(()=>{e.target.innerHTML = "انصراف"}, 2000)
   }).catch(error=>{
-    console.log(error);
+    if(error.status == 404){
+      setMessage(error.response.data);
+      setShowMessage(true);
+    }
+    else{
+      console.log(error);
+    }
   })
 }
 
@@ -146,7 +155,9 @@ const exit = async (id,e)=>{
           ) : (
             subscribers.map((sub) => {
               return (
-              <tr key={sub.id}>
+              <tr key={sub.id} onClick={()=>{
+                navigate(`/${sub.id}`)
+              }}>
                 <td>
                   {sub.photo_url ? (
                     <img
@@ -170,11 +181,15 @@ const exit = async (id,e)=>{
                 <td><button className="btn btn-primary  align-items-center justify-content-center"
                  onClick={e=>{
                   e.stopPropagation();
-                  enter(sub.id,e)}}>حضور</button></td>
+                  enter(sub.id,e)}}
+                  disabled={sub.subscriptionEnd < new Date().toISOString().split('T')[0]?"disabled": ""}
+                  >حضور</button></td>
                 <td><button className="btn btn-primary align-items-center justify-content-center"
                 onClick={e=>{
                   e.stopPropagation();
-                  exit(sub.id,e)}}>انصراف</button></td>
+                  exit(sub.id,e)}}
+                  disabled={sub.subscriptionEnd < new Date().toISOString().split('T')[0]?"disabled": ""}
+                  >انصراف</button></td>
               </tr>
             )})
           )}

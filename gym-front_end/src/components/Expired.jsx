@@ -6,7 +6,6 @@ import { Modal, Button, Form, Table } from "react-bootstrap";
 export default function Expired(){
       const { subscribers, setSubscribers, subscriber, setSubscriber } = useSubscriber();
 
-      const [message, setMessage] = useState("");
       const [showMessage, setShowMessage] = useState(false);
       const [today, setToday] = useState(false);
       const [months , setMonths] = useState(1);
@@ -126,6 +125,17 @@ export default function Expired(){
                     onChange={(e) => setToday(e.target.checked)}
                     className="form-check-input me-2"
                 />
+            </div>
+
+            <div className="mb-3">
+            <label className="form-label fw-semibold">السعر</label>
+            <input
+                type="number"
+                className="form-control mt-1"
+                placeholder="أدخل السعر"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+            />
             </div>
 
             <div className="mb-3">

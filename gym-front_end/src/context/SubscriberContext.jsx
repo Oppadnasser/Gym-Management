@@ -3,7 +3,6 @@ import React, { createContext, useState, useContext } from 'react';
 
 const SubscriberContext = createContext();
 
-// default subscriber object (same as Java model)
 const defaultSubscriber = {
   id: '',
   name: '',

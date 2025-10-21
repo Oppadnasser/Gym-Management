@@ -1,6 +1,7 @@
 package com.gym_back_end.Models;
 
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -12,8 +13,11 @@ public class Attendance {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @JsonFormat(shape =  JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate attendance_date;
+    @JsonFormat(shape =  JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime time_in;
+    @JsonFormat(shape =  JsonFormat.Shape.STRING, pattern = "HH:mm")
     private LocalTime time_out;
 
     @ManyToOne

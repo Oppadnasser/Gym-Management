@@ -1,5 +1,6 @@
 package com.gym_back_end.Controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -12,7 +13,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,7 +29,7 @@ public class GymController {
 
     private final GymService service;
 
-    @Autowired
+
     private GymService getService;
 
     public GymController(GymService service) {
@@ -35,6 +41,20 @@ public class GymController {
     public ResponseEntity<List<Subscriber>> getAllSubscribers() throws IOException {
         List<Subscriber> subscribers = service.getAllSubscribers();
         return ResponseEntity.ok(subscribers);
+    }
+    @GetMapping("/{id}")
+    public ResponseEntity<Map<String,Object>> getSubscriber(@PathVariable Integer id) throws IOException {
+        Map<String,Object> response = new HashMap<>();
+        Subscriber subscriber = service.searchById(id);
+        Path path = Paths.get("uploads/"+subscriber.getPhoto_url());
+        byte[] bytes = Files.readAllBytes(path);
+        subscriber.setPhoto_url(Base64.getEncoder().encodeToString(bytes));
+        response.put("subscriber",subscriber);
+        response.put("attendanceHistory",service.getAttendanceHistory(id));
+        response.put("subscriptionHistory",service.getHistoricalSubscriptions(id));
+        System.out.println(service.getHistoricalSubscriptions(id).get(0).getEndDate());
+
+        return ResponseEntity.ok(response);
     }
     // B
     @GetMapping("/expiring-soon")
@@ -64,15 +84,15 @@ public class GymController {
     }
 
     // E
-    @PutMapping("/{id}")
+    @PutMapping("/update")
     public ResponseEntity<Subscriber> updateSubscriber(
-            @PathVariable int id,
-            @RequestParam("name") String name,
-            @RequestParam("subscriptionStart") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate subscriptionStart,
-            @RequestParam("subscriptionEnd") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate subscriptionEnd,
-            @RequestParam(value = "photo", required = false) MultipartFile photo) {
-
-        Subscriber updated = service.updateSubscriber(id, name, subscriptionStart, subscriptionEnd, photo);
+            @RequestParam("subscriber") String subscriberJson,
+            @RequestParam(value = "photo", required = false) MultipartFile photo) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        Subscriber subscriber = mapper.readValue(subscriberJson, Subscriber.class);
+        Subscriber updated = service.updateSubscriber(subscriber,photo);
         return ResponseEntity.ok(updated);
     }
 
@@ -114,9 +134,14 @@ public class GymController {
     }
 
     // Search by id
-    @GetMapping("/subscribers/search/id")
+    @GetMapping("/search/id")
     public Subscriber searchById(@RequestParam int id) {
         return service.searchById(id);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteSubscriber(@PathVariable Integer id) {
+        return service.delete(id);
     }
 
 

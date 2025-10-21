@@ -117,12 +117,12 @@ public class GymService {
     }
 
     // E. Update subscriber photo
-    public Subscriber updateSubscriber(int id, String name, LocalDate startDate, LocalDate endDate, MultipartFile photo) {
-        Subscriber subscriber = subscriberRepo.findById(id);
+    public Subscriber updateSubscriber(Subscriber subscriber1,MultipartFile photo) throws IOException {
+        Subscriber subscriber = subscriberRepo.findById(subscriber1.getId());
+        if(subscriber == null){
+            return null;
+        }
 
-        subscriber.setName(name);
-        subscriber.setSubscriptionStart(startDate);
-        subscriber.setSubscriptionEnd(endDate);
 
         // Handle new photo if uploaded
         if (photo != null && !photo.isEmpty()) {
@@ -134,20 +134,28 @@ public class GymService {
                 }
 
                 // Define new file path: uploads/{id}.jpg
-                String fileName = id + getExtension(photo.getOriginalFilename());
+                String fileName = subscriber1.getId() + getExtension(photo.getOriginalFilename());
                 Path filePath = Paths.get(uploadDir, fileName);
-                subscriber.setPhoto_url(photo.getOriginalFilename());
+                subscriber1.setPhoto_url(photo.getOriginalFilename());
+
 
                 // Save new photo
                 Files.write(filePath, photo.getBytes());
+                subscriberRepo.save(subscriber1);
 
 
             } catch (IOException e) {
                 throw new RuntimeException("Failed to upload photo: " + e.getMessage());
             }
-        }
+        } else{
+                subscriber1.setPhoto_url(subscriber.getPhoto_url());
+                subscriberRepo.save(subscriber1);
+            }
+        Path path = Paths.get("uploads/"+subscriber1.getPhoto_url());
+        byte[] bytes = Files.readAllBytes(path);
+        subscriber1.setPhoto_url(Base64.getEncoder().encodeToString(bytes));
 
-        return subscriberRepo.save(subscriber);
+        return subscriber1;
     }
 
     // Helper method to keep file extension (e.g. .jpg, .png)
@@ -193,6 +201,9 @@ public class GymService {
     // I. Exit the subscriber
     public ResponseEntity<String> exitSubscriber(Integer id) {
         Attendance attendance = attendanceRepo.findAttendance(id, LocalDate.now());
+        if(attendance == null){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("هذا اللاعب لم يسجل دخول اليوم او سجل دخول وخروج");
+        }
         attendance.setTimeOut(LocalTime.now().truncatedTo(ChronoUnit.MINUTES));
         attendanceRepo.save(attendance);
         return ResponseEntity.ok("done");
@@ -205,5 +216,18 @@ public class GymService {
     // 🔍 Search by ID
     public Subscriber searchById(int id) {
         return subscriberRepo.findById(id);
+    }
+
+    public List<Attendance> getAttendanceHistory(int id) {
+        return attendanceRepo.findHistoryOfAttendance(id);
+    }
+
+    public List<HistoricalSubscription> getHistoricalSubscriptions(int id) {
+        return historyRepo.findHistoryOfSub(id);
+    }
+
+    public ResponseEntity<String> delete(int id){
+        subscriberRepo.deleteById(id);
+        return ResponseEntity.ok("done");
     }
 }

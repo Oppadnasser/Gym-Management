@@ -1,5 +1,6 @@
 package com.gym_back_end.Models;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
@@ -9,8 +10,9 @@ public class HistoricalSubscription {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-
+    @JsonFormat(shape =  JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate start_date;
+    @JsonFormat(shape =  JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate end_date;
     private Double price;
 
