@@ -149,7 +149,7 @@ const exit = async (id,e)=>{
           {subscribers.length === 0 ? (
             <tr>
               <td colSpan="9" className="text-center text-muted">
-                No subscribers found.
+                لا يوجد مشتركين حاليين.
               </td>
             </tr>
           ) : (
@@ -171,7 +171,7 @@ const exit = async (id,e)=>{
                       }}
                     />
                   ) : (
-                    <span className="text-muted">No Photo</span>
+                    <span className="text-muted">خطأ</span>
                   )}
                 </td>
                 <td>{sub.name}</td>
@@ -199,12 +199,12 @@ const exit = async (id,e)=>{
       {/* Add Subscriber Modal */}
       <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Add New Subscriber</Modal.Title>
+          <Modal.Title>مشترك جديد</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
             <Form.Group className="mb-2">
-              <Form.Label>Name</Form.Label>
+              <Form.Label>الاسم</Form.Label>
               <Form.Control
                 name="name"
                 value={newSubscriber.name}
@@ -213,7 +213,7 @@ const exit = async (id,e)=>{
             </Form.Group>
 
             <Form.Group className="mb-2">
-              <Form.Label>Phone</Form.Label>
+              <Form.Label>رقم الهاتف</Form.Label>
               <Form.Control
                 name="phone"
                 value={newSubscriber.phone}
@@ -223,7 +223,7 @@ const exit = async (id,e)=>{
 
 
             <Form.Group className="mb-2">
-              <Form.Label>Age</Form.Label>
+              <Form.Label>السن</Form.Label>
               <Form.Control
                 type="number"
                 name="age"
@@ -233,7 +233,7 @@ const exit = async (id,e)=>{
             </Form.Group>
 
             <Form.Group className="mb-2">
-              <Form.Label>Months</Form.Label>
+              <Form.Label>مدة الاشتراك (بالشهور)</Form.Label>
               <Form.Control
                 type="number"
                 name="months"
@@ -253,7 +253,7 @@ const exit = async (id,e)=>{
 
             {/* ✅ Add Photo Upload */}
             <Form.Group className="mb-2">
-              <Form.Label>Photo</Form.Label>
+              <Form.Label>صورة</Form.Label>
               <Form.Control type="file" onChange={handlePhotoChange} accept="image/*" />
             </Form.Group>
           </Form>
@@ -261,10 +261,10 @@ const exit = async (id,e)=>{
 
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancel
+            إلغاء
           </Button>
           <Button variant="success" onClick={handleAddSubscriber}>
-            Save
+            إضافة
           </Button>
         </Modal.Footer>
       </Modal>

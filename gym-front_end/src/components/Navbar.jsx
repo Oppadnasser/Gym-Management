@@ -86,14 +86,14 @@ const Navbar = () => {
 
           {/* Navigation Buttons */}
 
-          <Button onClick={()=>navigate("/")}>current</Button>
+          <Button onClick={()=>navigate("/")}>الرئيسية</Button>
 
           <button
             type="button"
             className="btn btn-warning fw-bold"
             onClick={() => navigate("/renew")}
           >
-            Renew
+            التجديد
           </button>
 
 
@@ -103,7 +103,7 @@ const Navbar = () => {
             className="btn btn-danger fw-bold"
             onClick={() => navigate("/expired")}
           >
-            Expired
+            المنتهية
           </button>
         </form>
       </div>

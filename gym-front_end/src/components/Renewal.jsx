@@ -42,11 +42,11 @@ export default function Renewal(){
             <Table striped bordered hover>
         <thead>
           <tr>
-            <th></th>
-            <th>Name</th>
-            <th>Age</th>
-            <th>Start Date</th>
-            <th>End Date</th>
+            <th>صورة</th>
+            <th>الاسم</th>
+            <th>السن</th>
+            <th>تاريخ الاشتراك</th>
+            <th>تاريخ الانتهاء</th>
             <th>تجديد</th>
           </tr>
         </thead>
@@ -54,7 +54,7 @@ export default function Renewal(){
           {subscribers.length === 0 ? (
             <tr>
               <td colSpan="9" className="text-center text-muted">
-                No subscribers found.
+                لا توجد تجديدات حالية.
               </td>
             </tr>
           ) : (
@@ -74,7 +74,7 @@ export default function Renewal(){
                       }}
                     />
                   ) : (
-                    <span className="text-muted">No Photo</span>
+                    <span className="text-muted">صورة</span>
                   )}
                 </td>
                 <td>{sub.name}</td>
