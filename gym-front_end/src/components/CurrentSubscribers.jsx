@@ -28,7 +28,6 @@ export default function CurrentSubscribers() {
       try {
         const response = await axios.get("http://localhost:8080/api/subscribers");
         setSubscribers(response.data);
-        console.log(response.data[0].subscriptionStart);
       } catch (error) {
         console.error("Error fetching subscribers:", error);
       }
@@ -58,7 +57,6 @@ export default function CurrentSubscribers() {
     const subscriberData = {
       name: newSubscriber.name,
       phone: newSubscriber.phone,
-      address: newSubscriber.address,
       age: newSubscriber.age,
       subscriptionStart: startDate.toISOString().split("T")[0],
       subscriptionEnd: endDate.toISOString().split("T")[0],
@@ -136,13 +134,13 @@ const exit = async (id,e)=>{
       <Table striped bordered hover>
         <thead>
           <tr>
-            <th>الصورة</th>
-            <th>الاسم</th>
-            <th>السن</th>
-            <th>يبدأ</th>
-            <th>ينتهي</th>
-            <th>دخول</th>
             <th>خروج</th>
+            <th>دخول</th>
+            <th>ينتهي</th>
+            <th>يبدأ</th>
+            <th>السن</th>
+            <th>الاسم</th>
+            <th>الصورة</th>
           </tr>
         </thead>
         <tbody>
@@ -157,39 +155,41 @@ const exit = async (id,e)=>{
               return (
               <tr key={sub.id} onClick={()=>{
                 navigate(`/${sub.id}`)
-              }}>
-                <td>
-                  {sub.photo_url ? (
-                    <img
-                      src={`data:image/jpeg;base64,${sub.photo_url}`}
-                      alt={sub.name}
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        objectFit: "cover",
-                        borderRadius: "50%",
-                      }}
-                    />
-                  ) : (
-                    <span className="text-muted">خطأ</span>
-                  )}
-                </td>
-                <td>{sub.name}</td>
-                <td>{sub.age}</td>
-                <td>{sub.subscriptionStart}</td>
-                <td style={{color:`${sub.subscriptionEnd < new Date().toISOString().split('T')[0]? "red": "black"}`}}>{sub.subscriptionEnd}</td>
-                <td><button className="btn btn-primary  align-items-center justify-content-center"
-                 onClick={e=>{
-                  e.stopPropagation();
-                  enter(sub.id,e)}}
-                  disabled={sub.subscriptionEnd < new Date().toISOString().split('T')[0]?"disabled": ""}
-                  >حضور</button></td>
+              }}
+              style={{cursor:"pointer"}}
+              >
                 <td><button className="btn btn-primary align-items-center justify-content-center"
                 onClick={e=>{
                   e.stopPropagation();
                   exit(sub.id,e)}}
                   disabled={sub.subscriptionEnd < new Date().toISOString().split('T')[0]?"disabled": ""}
                   >انصراف</button></td>
+                  <td><button className="btn btn-primary  align-items-center justify-content-center"
+                   onClick={e=>{
+                     e.stopPropagation();
+                     enter(sub.id,e)}}
+                     disabled={sub.subscriptionEnd < new Date().toISOString().split('T')[0]?"disabled": ""}
+                     >حضور</button></td>
+                  <td style={{color:`${new Date(sub.subscriptionEnd) < new Date()? "red": new Date(sub.subscriptionEnd).setDate(new Date(sub.subscriptionEnd).getDate()-3) < new Date()? "orange": "black"}`}}>{sub.subscriptionEnd}</td>
+                  <td>{sub.subscriptionStart}</td>
+                  <td>{sub.age}</td>
+                  <td>{sub.name}</td>
+                  <td>
+                    {sub.photo_url ? (
+                      <img
+                        src={`data:image/jpeg;base64,${sub.photo_url}`}
+                        alt={sub.name}
+                        style={{
+                          width: "40px",
+                          height: "40px",
+                          objectFit: "cover",
+                          borderRadius: "50%",
+                        }}
+                      />
+                    ) : (
+                      <span className="text-muted">خطأ</span>
+                    )}
+                  </td>
               </tr>
             )})
           )}

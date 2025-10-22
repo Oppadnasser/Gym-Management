@@ -1,11 +1,12 @@
 import { useSubscriber } from "../context/SubscriberContext";
 import {React, useState, useEffect} from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Modal, Button, Form, Table } from "react-bootstrap";
 
 export default function Expired(){
       const { subscribers, setSubscribers, subscriber, setSubscriber } = useSubscriber();
-
+      const navigate = useNavigate();
       const [showMessage, setShowMessage] = useState(false);
       const [today, setToday] = useState(false);
       const [months , setMonths] = useState(1);
@@ -41,11 +42,11 @@ export default function Expired(){
             <Table striped bordered hover>
         <thead>
           <tr>
-            <th>صورة</th>
-            <th>الاسم</th>
-            <th>السن</th>
-            <th>تاريخ الاشتراك</th>
             <th>تاريخ الانتهاء</th>
+            <th>تاريخ الاشتراك</th>
+            <th>السن</th>
+            <th>الاسم</th>
+            <th>صورة</th>
             <th>تجديد</th>
           </tr>
         </thead>
@@ -59,7 +60,12 @@ export default function Expired(){
           ) : (
             subscribers.map((sub) => {
               return (
-              <tr key={sub.id}>
+              <tr key={sub.id} onClick={()=>{
+                navigate(`/${sub.id}`)}}>
+                <td style={{color:"red"}}>{sub.subscriptionEnd}</td>
+                <td>{sub.subscriptionStart}</td>
+                <td>{sub.age}</td>
+                <td>{sub.name}</td>
                 <td>
                   {sub.photo_url ? (
                     <img
@@ -76,10 +82,6 @@ export default function Expired(){
                     <span className="text-muted">صورة</span>
                   )}
                 </td>
-                <td>{sub.name}</td>
-                <td>{sub.age}</td>
-                <td>{sub.subscriptionStart}</td>
-                <td>{sub.subscriptionEnd}</td>
                 <td><button className="btn btn-primary  align-items-center justify-content-center"
                  onClick={e=>{
                   e.stopPropagation();

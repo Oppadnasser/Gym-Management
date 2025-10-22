@@ -167,7 +167,7 @@ public class GymService {
     public Subscriber renewSubscription(Integer id, LocalDate newStart, int months, Double price) {
         Subscriber sub = subscriberRepo.findById(id).orElseThrow();
         if(newStart == null){
-            newStart = sub.getSubscriptionEnd();
+            newStart = sub.getSubscriptionEnd().plusDays(1);
         }
         LocalDate newEnd =newStart.plusMonths(months).minusDays(1);
         HistoricalSubscription history = new HistoricalSubscription();
