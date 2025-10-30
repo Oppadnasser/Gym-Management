@@ -3,10 +3,9 @@ import { useSubscriber } from "../context/SubscriberContext";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Modal, Button, Form, Table } from "react-bootstrap";
-import {FaCheck} from "react-icons/fa";
 export default function CurrentSubscribers() {
   const navigate = useNavigate();
-  const { subscribers, setSubscribers } = useSubscriber();
+  const { subscribers, setSubscribers, setSearchType } = useSubscriber();
   const [message, setMessage] = useState("");
   const [price, setPrice] = useState(0);
   const [showMessage, setShowMessage] = useState(false);
@@ -20,22 +19,39 @@ export default function CurrentSubscribers() {
   });
   const [photo, setPhoto] = useState(null); // ✅ added photo state
   
-  const [clicked, setClicked] = useState(false);
 
   // 🔹 Fetch all subscribers when component loads
+
+  
   useEffect(() => {
+    setSearchType("")
     const fetchSubscribers = async () => {
       try {
-        const response = await axios.get("http://localhost:8080/api/subscribers");
+        const response = await axios.get("http://localhost:8080/api/subscribers",{withCredentials:true});
         setSubscribers(response.data);
       } catch (error) {
         console.error("Error fetching subscribers:", error);
       }
     };
+    
 
     fetchSubscribers();
   }, [setSubscribers]);
 
+  useEffect(()=>{
+    const checkAuth = ()=>{
+    try {
+      axios.get("http://localhost:8080/api/admin/check", {
+      withCredentials: true,
+    }).catch((error)=>{
+        navigate("/"); // Redirect to login page
+    })
+    } catch (error) {
+      console.error("Not logged in:", error);
+    }
+      }
+    checkAuth();
+  },[]);
   // 🔹 Handle text input
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -94,7 +110,7 @@ export default function CurrentSubscribers() {
 
 
 const enter = async (id,e) => {
-  await axios.post(`http://localhost:8080/api/subscribers/enter?id=${id}`)
+  await axios.post(`http://localhost:8080/api/subscribers/enter?id=${id}`,null,{withCredentials:true})
   .then((response)=>{
     e.target.innerHTML = "&#10003;"
     setTimeout(()=>{e.target.innerHTML = "حضور"}, 2000)
@@ -104,10 +120,11 @@ const enter = async (id,e) => {
       setMessage(error.response.data);
       setShowMessage(true);
     }
+    console.log(error);
   })
 }
 const exit = async (id,e)=>{
-  await axios.put(`http://localhost:8080/api/subscribers/exit?id=${id}`)
+  await axios.put(`http://localhost:8080/api/subscribers/exit?id=${id}`,null,{withCredentials:true})
   .then((response)=>{
     e.target.innerHTML = "&#10003;"
     setTimeout(()=>{e.target.innerHTML = "انصراف"}, 2000)
@@ -154,7 +171,7 @@ const exit = async (id,e)=>{
             subscribers.map((sub) => {
               return (
               <tr key={sub.id} onClick={()=>{
-                navigate(`/${sub.id}`)
+                navigate(`/home/${sub.id}`)
               }}
               style={{cursor:"pointer"}}
               >
@@ -170,7 +187,7 @@ const exit = async (id,e)=>{
                      enter(sub.id,e)}}
                      disabled={sub.subscriptionEnd < new Date().toISOString().split('T')[0]?"disabled": ""}
                      >حضور</button></td>
-                  <td style={{color:`${new Date(sub.subscriptionEnd) < new Date()? "red": new Date(sub.subscriptionEnd).setDate(new Date(sub.subscriptionEnd).getDate()-3) < new Date()? "orange": "black"}`}}>{sub.subscriptionEnd}</td>
+                  <td style={{color:`${new Date(sub.subscriptionEnd) < new Date().setDate(new Date().getDate()-1)? "red": new Date(sub.subscriptionEnd).setDate(new Date(sub.subscriptionEnd).getDate()-3) < new Date()? "orange": "black"}`}}>{sub.subscriptionEnd}</td>
                   <td>{sub.subscriptionStart}</td>
                   <td>{sub.age}</td>
                   <td>{sub.name}</td>

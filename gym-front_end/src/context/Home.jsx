@@ -5,7 +5,7 @@ import Expired from "../components/Expired.jsx";
 import CurrentSubscribers from "../components/CurrentSubscribers";
 import Renewal from "../components/Renewal.jsx";
 import SubscriberDetails from "../components/SubscriberDetails.jsx";
-
+import GymSummary from "../components/GymSummary.jsx";
 export default function Home(){
     return(
         <div>
@@ -15,6 +15,7 @@ export default function Home(){
                 <Route path="/expired" element={<Expired/>}/>
                 <Route path="/renew" element={<Renewal/>}/>
                 <Route path="/:id" element={<SubscriberDetails/>}/>
+                <Route path="/summary" element={<GymSummary/>}/>
             </Routes>
         </div>
     )

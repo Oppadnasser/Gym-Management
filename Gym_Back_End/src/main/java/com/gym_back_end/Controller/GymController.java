@@ -7,6 +7,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.gym_back_end.Models.*;
 import com.gym_back_end.Service.GymService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.relational.core.sql.In;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,13 +25,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/subscribers")
-
 public class GymController {
 
     private final GymService service;
 
-
-    private GymService getService;
 
     public GymController(GymService service) {
         this.service = service;
@@ -45,14 +43,10 @@ public class GymController {
     @GetMapping("/{id}")
     public ResponseEntity<Map<String,Object>> getSubscriber(@PathVariable Integer id) throws IOException {
         Map<String,Object> response = new HashMap<>();
-        Subscriber subscriber = service.searchById(id);
-        Path path = Paths.get("uploads/"+subscriber.getPhoto_url());
-        byte[] bytes = Files.readAllBytes(path);
-        subscriber.setPhoto_url(Base64.getEncoder().encodeToString(bytes));
+        Subscriber subscriber = service.searchById(id,"");
         response.put("subscriber",subscriber);
         response.put("attendanceHistory",service.getAttendanceHistory(id));
         response.put("subscriptionHistory",service.getHistoricalSubscriptions(id));
-        System.out.println(service.getHistoricalSubscriptions(id).get(0).getEndDate());
 
         return ResponseEntity.ok(response);
     }
@@ -71,6 +65,7 @@ public class GymController {
     // D
     @PostMapping("/new-subscriber")
     public Subscriber addSubscriber(
+            @CookieValue(value = "token",required = false) String token,
             @RequestParam("subscriber") String subscriberJson,
             @RequestParam(value = "photo", required = false) MultipartFile photo,
             @RequestParam int price
@@ -80,25 +75,27 @@ public class GymController {
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         Subscriber subscriber = mapper.readValue(subscriberJson, Subscriber.class);
         System.out.println("in new");
-        return service.addSubscriber(subscriber, photo, price);
+        return service.addSubscriber(token,subscriber, photo, price);
     }
 
     // E
     @PutMapping("/update")
     public ResponseEntity<Subscriber> updateSubscriber(
+            @CookieValue(value = "token",required = false) String token,
             @RequestParam("subscriber") String subscriberJson,
             @RequestParam(value = "photo", required = false) MultipartFile photo) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         Subscriber subscriber = mapper.readValue(subscriberJson, Subscriber.class);
-        Subscriber updated = service.updateSubscriber(subscriber,photo);
+        Subscriber updated = service.updateSubscriber(subscriber,photo,token);
         return ResponseEntity.ok(updated);
     }
 
     // G
     @PutMapping("/renew")
     public Subscriber renewSubscription(
+            @CookieValue(value="token",required = false) String token,
             @RequestParam Integer id,
             @RequestParam Integer months,
             @RequestParam boolean today,
@@ -112,7 +109,7 @@ public class GymController {
         else {
             start = null;
         }
-        return service.renewSubscription(id, start, months, price);
+        return service.renewSubscription(id, start, months, price,token);
     }
 
     // H
@@ -129,20 +126,27 @@ public class GymController {
 
     // Search by name
     @GetMapping("/search/name")
-    public List<Subscriber> searchByName(@RequestParam String name) {
-        return service.searchByName(name);
+    public List<Subscriber> searchByName(@RequestParam String name, @RequestParam String type) throws IOException {
+        return service.searchByName(name,type);
     }
 
     // Search by id
     @GetMapping("/search/id")
-    public Subscriber searchById(@RequestParam int id) {
-        return service.searchById(id);
+    public Subscriber searchById(@RequestParam int id, @RequestParam String type) throws IOException {
+        return service.searchById(id,type);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteSubscriber(@PathVariable Integer id) {
-        return service.delete(id);
+    public ResponseEntity<String> deleteSubscriber(@CookieValue(value = "token" ,required = false) String token,@PathVariable Integer id) {
+        return service.delete(id,token);
     }
 
-
+    @GetMapping("/active")
+    public ResponseEntity<Integer> countActive(){
+        return service.countActiveSubscribers();
+    }
+    @GetMapping("/revenue")
+    public ResponseEntity<Map<String,Double>> getRevenue(@RequestParam Integer year, @RequestParam Integer month , @RequestParam Integer day){
+        return service.calculateRevenue(year,month,day);
+    }
 }

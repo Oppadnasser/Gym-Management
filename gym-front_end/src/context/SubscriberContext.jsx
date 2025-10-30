@@ -13,14 +13,19 @@ const defaultSubscriber = {
 };
 
 export const SubscriberProvider = ({ children }) => {
+  
   // Single subscriber (for view/edit forms)
   const [subscriber, setSubscriber] = useState(defaultSubscriber);
+
+  const [searchType, setSearchType] = useState("");
+  
 
   // List of subscribers (for tables/lists)
   const [subscribers, setSubscribers] = useState([]);
 
   // Reset subscriber to empty structure
   const clearSubscriber = () => setSubscriber(defaultSubscriber);
+  const [admin , setAdmin] = useState(null);
 
   return (
     <SubscriberContext.Provider
@@ -30,6 +35,10 @@ export const SubscriberProvider = ({ children }) => {
         clearSubscriber,
         subscribers,
         setSubscribers,
+        searchType,
+        setSearchType,
+        admin,
+        setAdmin,
       }}
     >
       {children}

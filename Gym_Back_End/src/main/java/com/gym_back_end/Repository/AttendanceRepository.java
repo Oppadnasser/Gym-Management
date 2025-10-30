@@ -11,7 +11,7 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Integer>
     @Query("SELECT a from Attendance a WHERE a.subscriber.id = :id and a.attendance_date = :today and a.time_out IS NULL")
     Attendance findAttendance(int id, LocalDate today);
 
-    @Query("SELECT a from Attendance a WHERE a.subscriber.id = :id order by a.attendance_date , a.time_in   ")
+    @Query("SELECT a from Attendance a WHERE a.subscriber.id = :id order by a.attendance_date desc , a.time_in desc  ")
     List<Attendance> findHistoryOfAttendance(int id);
 }
 

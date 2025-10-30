@@ -7,7 +7,7 @@ import axios from "axios";
 export default function SubscriberDetails() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const {subscriber, setSubscriber} = useSubscriber();
+  const {subscriber, setSubscriber, admin, setAdmin} = useSubscriber();
   const [attendance, setAttendance] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +37,7 @@ export default function SubscriberDetails() {
       });
       setShowEdit(false);
       setReload(!reload);
-      alert("Subscriber updated successfully!");
+      alert("تم تحديث بيانات المشترك");
   } catch (err) {
       console.error("Error updating subscriber:", err);
   }
@@ -50,8 +50,8 @@ export default function SubscriberDetails() {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`http://localhost:8080/api/subscribers/${id}`);
-      alert("Subscriber deleted successfully!");
+      await axios.delete(`http://localhost:8080/api/subscribers/${id}`,{withCredentials:true});
+      alert("تم حذف المشترك بنجاح");
       navigate(-1);
     } catch (err) {
       console.error("Error deleting subscriber:", err);
@@ -62,11 +62,10 @@ export default function SubscriberDetails() {
     useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get(`http://localhost:8080/api/subscribers/${id}`);
+        const res = await axios.get(`http://localhost:8080/api/subscribers/${id}`,{withCredentials:true});
         setSubscriber(res.data.subscriber);
         setAttendance(res.data.attendanceHistory);
         setSubscriptions(res.data.subscriptionHistory);
-        console.log(res.data.subscriptionHistory);
         setUpdatedData(res.data.subscriber);
         if(new Date() > new Date(res.data.subscriber.subscriptionEnd)){
           setShowRenew(true);
@@ -76,22 +75,37 @@ export default function SubscriberDetails() {
           setShowRenew(true);
           setColor("orange");
         }
-        console.log(isOppad);
       } catch (err) {
         console.error("Error fetching subscriber:", err);
       } finally {
         setLoading(false);
       }
     };
+
+    const checkAuth = ()=>{
+    try {
+      axios.get("http://localhost:8080/api/admin/check", {
+      withCredentials: true,
+    }).then(response=>{
+      setAdmin(response.data);
+    }).catch((error)=>{
+        navigate("/"); // Redirect to login page
+    })
+    } catch (error) {
+      console.error("Not logged in:", error);
+    }
+      }
+    checkAuth();
     fetchData();
   }, [id,reload]);
   if (loading) return <p className="text-center mt-5">Loading...</p>;
   if (!subscriber) return <p className="text-center mt-5 text-danger">Subscriber not found</p>;
 
   const renew = async ()=>{
-    await axios.put(`http://localhost:8080/api/subscribers/renew?id=${subscriber.id}&months=${months}&today=${today}&price=${price}`)
+    await axios.put(`http://localhost:8080/api/subscribers/renew?id=${subscriber.id}&months=${months}&today=${today}&price=${price}`,null,{withCredentials:true})
     .then((response)=>{
         setShowMessage(false);
+        setReload(!reload);
     }).catch(error=>{
         console.log(error);
     })
@@ -140,47 +154,52 @@ export default function SubscriberDetails() {
         </div>
 
         {/* Attendance Table */}
-        <h4 className="mt-4">Attendance History</h4>
-        <table className="table table-striped">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Time In</th>
-              <th>Time Out</th>
-            </tr>
-          </thead>
-          <tbody>
-            {attendance.map((a, index) => {
-                return(
-              <tr key={index}>
-                <td>{a.attendance_date}</td>
-                <td>{a.time_in}</td>
-                <td>{a.time_out}</td>
-              </tr>
-            )})}
-          </tbody>
-        </table>
+        <h4 className="mt-4">الحضور</h4>
+          <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+            <table className="table table-striped table-bordered">
+              <thead className="table-dark" style={{ position: "sticky", top: 0, zIndex: 1 }}>
+                <tr>
+                  <th>خروج</th>
+                  <th>دخول</th>
+                  <th>التاريخ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {attendance.map((a, index) => (
+                  <tr key={index}>
+                    <td>{a.time_out}</td>
+                    <td>{a.time_in}</td>
+                    <td>{a.attendance_date}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
 
         {/* Subscriptions Table */}
-        <h4 className="mt-4">Subscription History</h4>
-        <table className="table table-striped">
-          <thead>
-            <tr>
-              <th>Start Date</th>
-              <th>End Date</th>
-              <th>Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            {subscriptions.map((s, index) => (
-              <tr key={index}>
-                <td>{s.start_date}</td>
-                <td>{s.end_date}</td>
-                <td>{s.price}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <h4 className="mt-4">الاشتراكات</h4>
+        <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+            <table className="table table-striped table-bordered text-center align-middle">
+              <thead className="table-dark" style={{ position: "sticky", top: 0, zIndex: 1 }}>
+                <tr>
+                  <th>السعر</th>
+                  <th>النهاية</th>
+                  <th>البداية</th>
+                </tr>
+              </thead>
+              <tbody>
+                {subscriptions.map((s, index) => (
+                  <tr key={index}>
+                    <td>{s.price}</td>
+                    <td>{s.end_date}</td>
+                    <td>{s.start_date}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+        </div>
+
       </div>
 
       {/* 🟨 Update Modal */}
@@ -189,7 +208,7 @@ export default function SubscriberDetails() {
             <div className="modal-dialog">
             <div className="modal-content">
                 <div className="modal-header">
-                <h5 className="modal-title">Update Subscriber</h5>
+                <h5 className="modal-title">تعديل المشترك</h5>
                 <button
                     className="btn-close"
                     onClick={() => setShowEdit(false)}
@@ -277,16 +296,15 @@ export default function SubscriberDetails() {
                     className="btn btn-secondary"
                     onClick={() => {setShowEdit(false);
                         setUpdatedData(subscriber);
-                        console.log(photo);
                         setPhoto(null);
                         
 
                     }}
                 >
-                    Cancel
+                    إلغاء
                 </button>
                 <button className="btn btn-primary" onClick={handleUpdate}>
-                    Save Changes
+                    حفظ
                 </button>
                 </div>
             </div>
@@ -301,15 +319,15 @@ export default function SubscriberDetails() {
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header bg-danger text-white">
-                <h5 className="modal-title">Confirm Deletion</h5>
+                <h5 className="modal-title">تأكيد الحذف</h5>
                 <button className="btn-close" onClick={() => setShowDeleteConfirm(false)}></button>
               </div>
               <div className="modal-body">
-                Are you sure you want to delete <b>{subscriber.name}</b>?
+                هل انت متأكد من حذف <b>{subscriber.name}</b>?
               </div>
               <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
-                <button className="btn btn-danger" onClick={handleDelete}>Yes, Delete</button>
+                <button className="btn btn-secondary" onClick={() => setShowDeleteConfirm(false)}>إلغاء</button>
+                <button className="btn btn-danger" onClick={handleDelete}>نعم</button>
               </div>
             </div>
           </div>

@@ -5,18 +5,17 @@ import axios from "axios";
 import { Modal, Button, Form, Table } from "react-bootstrap";
 
 export default function Expired(){
-      const { subscribers, setSubscribers, subscriber, setSubscriber } = useSubscriber();
+      const { subscribers, setSubscribers, subscriber, setSubscriber, setSearchType } = useSubscriber();
       const navigate = useNavigate();
       const [showMessage, setShowMessage] = useState(false);
       const [today, setToday] = useState(false);
       const [months , setMonths] = useState(1);
       const [price, setPrice] = useState(0);
-      
-
       useEffect(()=>{
+        setSearchType("expired");
         const fetchSubscribers = async () => {
       try {
-        const response = await axios.get("http://localhost:8080/api/subscribers/expired");
+        const response = await axios.get("http://localhost:8080/api/subscribers/expired",{withCredentials:true});
         setSubscribers(response.data);
       } catch (error) {
         console.error("Error fetching subscribers:", error);
@@ -26,8 +25,23 @@ export default function Expired(){
     fetchSubscribers();
   }, [setSubscribers])
 
+  useEffect(()=>{
+    const checkAuth = ()=>{
+    try {
+      axios.get("http://localhost:8080/api/admin/check", {
+      withCredentials: true,
+    }).catch((error)=>{
+        navigate("/"); // Redirect to login page
+    })
+    } catch (error) {
+      console.error("Not logged in:", error);
+    }
+      }
+    checkAuth();
+  },[]);
+
   const renew = async ()=>{
-    await axios.put(`http://localhost:8080/api/subscribers/renew?id=${subscriber.id}&months=${months}&today=${today}&price=${price}`)
+    await axios.put(`http://localhost:8080/api/subscribers/renew?id=${subscriber.id}&months=${months}&today=${today}&price=${price}`,null,{withCredentials:true})
     .then((response)=>{
         setSubscribers(subscribers.filter(sub=>sub.id !== subscriber.id));
         setShowMessage(false);
@@ -61,7 +75,7 @@ export default function Expired(){
             subscribers.map((sub) => {
               return (
               <tr key={sub.id} onClick={()=>{
-                navigate(`/${sub.id}`)}}>
+                navigate(`/home/${sub.id}`)}}>
                 <td style={{color:"red"}}>{sub.subscriptionEnd}</td>
                 <td>{sub.subscriptionStart}</td>
                 <td>{sub.age}</td>

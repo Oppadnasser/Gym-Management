@@ -1,7 +1,7 @@
 import logo from "./logo.svg";
 import "./App.css";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { SubscriberProvider } from "./context/SubscriberContext";
+import LoginPage from "./components/LoginPage";
 import Home from "./context/Home";
 
 function App() {
@@ -9,7 +9,8 @@ function App() {
     <div className="App">
       <Router>
         <Routes>
-          <Route path="/*" element={<Home />} />
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/home/*" element={<Home />} />
         </Routes>
       </Router>
     </div>

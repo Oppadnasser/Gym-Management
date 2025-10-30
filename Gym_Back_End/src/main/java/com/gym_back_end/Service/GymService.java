@@ -1,5 +1,6 @@
 package com.gym_back_end.Service;
 
+import com.gym_back_end.JwtUtil;
 import com.gym_back_end.Models.*;
 import com.gym_back_end.Repository.*;
 import org.apache.coyote.Response;
@@ -19,23 +20,31 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class GymService {
+    private final LogsService logsService;
 
     private final SubscriberRepository subscriberRepo;
     private final AttendanceRepository attendanceRepo;
+    private final JwtUtil jwtUtil;
+    private int numberSubscribers;
     private final HistoricalSubscriptionRepository historyRepo;;
     @Value("${file.upload-dir}")
     private String uploadDir;
 
-    public GymService(SubscriberRepository subscriberRepo, AttendanceRepository attendanceRepo, HistoricalSubscriptionRepository historyRepo) {
+    public GymService(SubscriberRepository subscriberRepo, AttendanceRepository attendanceRepo, HistoricalSubscriptionRepository historyRepo, LogsService logsService, JwtUtil jwtUtil) {
         this.subscriberRepo = subscriberRepo;
         this.attendanceRepo = attendanceRepo;
         this.historyRepo = historyRepo;
+        this.logsService = logsService;
+        Integer num = subscriberRepo.findMaxId();
+        this.numberSubscribers = (num == null) ? 0 : num ;
+        if(this.numberSubscribers > 1){
+            this.numberSubscribers = this.numberSubscribers-(LocalDate.now().getYear()*10000);
+        }
+        this.jwtUtil = jwtUtil;
     }
 
     // A. Get all subscribers
@@ -72,11 +81,19 @@ public class GymService {
     }
 
     // D. Add new subscriber (with photo)
-    public Subscriber addSubscriber(Subscriber subscriber, MultipartFile photoFile , int price) throws IOException {
+    public Subscriber addSubscriber(String token,Subscriber subscriber, MultipartFile photoFile , int price) throws IOException {
         // 1. Save subscriber first (without photo)
+        if(numberSubscribers == 0){
+            subscriber.setId(1);
+        }
+        else{
+            subscriber.setId((LocalDate.now().getYear()*10000)+ numberSubscribers + 1);
+        }
         subscriber.setSubscriptionEnd(subscriber.getSubscriptionEnd().minusDays(1));
         Subscriber saved = subscriberRepo.save(subscriber);
+        numberSubscribers++;
         HistoricalSubscription historicalSubscription = new HistoricalSubscription();
+        historicalSubscription.setPayDate(LocalDate.now());
         historicalSubscription.setSubscriber(saved);
         historicalSubscription.setStartDate(subscriber.getSubscriptionStart());
         historicalSubscription.setEndDate(subscriber.getSubscriptionEnd());
@@ -104,6 +121,9 @@ public class GymService {
             saved.setPhoto_url("person.jpg");
             subscriberRepo.save(saved);
         }
+        String adminName = jwtUtil.extractAdminName(token);
+        int interval = (int)  Math.ceil(ChronoUnit.MONTHS.between(subscriber.getSubscriptionStart(), subscriber.getSubscriptionEnd()));
+        logsService.saveLog("أضاف مشترك", adminName, subscriber.getName(), interval+1,(double) price,LocalTime.now());
         Path path = Paths.get("uploads/"+saved.getPhoto_url());
         byte[] bytes = Files.readAllBytes(path);
         saved.setPhoto_url(Base64.getEncoder().encodeToString(bytes));
@@ -117,7 +137,7 @@ public class GymService {
     }
 
     // E. Update subscriber photo
-    public Subscriber updateSubscriber(Subscriber subscriber1,MultipartFile photo) throws IOException {
+    public Subscriber updateSubscriber(Subscriber subscriber1,MultipartFile photo, String token) throws IOException {
         Subscriber subscriber = subscriberRepo.findById(subscriber1.getId());
         if(subscriber == null){
             return null;
@@ -136,25 +156,40 @@ public class GymService {
                 // Define new file path: uploads/{id}.jpg
                 String fileName = subscriber1.getId() + getExtension(photo.getOriginalFilename());
                 Path filePath = Paths.get(uploadDir, fileName);
-                subscriber1.setPhoto_url(photo.getOriginalFilename());
+                subscriber1.setPhoto_url(fileName);
 
 
                 // Save new photo
                 Files.write(filePath, photo.getBytes());
+                logsService.saveLog("تحديث الصورة",jwtUtil.extractAdminName(token),subscriber1.getName(),0,0.0,LocalTime.now());
                 subscriberRepo.save(subscriber1);
-
 
             } catch (IOException e) {
                 throw new RuntimeException("Failed to upload photo: " + e.getMessage());
             }
         } else{
                 subscriber1.setPhoto_url(subscriber.getPhoto_url());
-                subscriberRepo.save(subscriber1);
             }
+
+        if(!Objects.equals(subscriber.getPhone(), subscriber1.getPhone())){
+            logsService.saveLog("تحديث الرقم",jwtUtil.extractAdminName(token),subscriber1.getName(),0,0.0,LocalTime.now());
+        }
+        if(!subscriber.getSubscriptionEnd().equals(subscriber1.getSubscriptionEnd()) ){
+            logsService.saveLog("تحديث تاريخ انتهاء الاشتراك",jwtUtil.extractAdminName(token),subscriber1.getName(),0,0.0,LocalTime.now());
+        }
+        if(!subscriber.getSubscriptionStart().equals(subscriber1.getSubscriptionStart())){
+            logsService.saveLog("تحديث تاريخ بداية الاشتراك",jwtUtil.extractAdminName(token),subscriber1.getName(),0,0.0,LocalTime.now());
+        }
+        if(subscriber.getAge() != subscriber1.getAge()){
+            logsService.saveLog("تحديث السن",jwtUtil.extractAdminName(token),subscriber1.getName(),0,0.0,LocalTime.now());
+        }
+        if(!Objects.equals(subscriber.getName(), subscriber1.getName())){
+            logsService.saveLog("تحديث الاسم",jwtUtil.extractAdminName(token),subscriber1.getName(),0,0.0,LocalTime.now());
+        }
+        subscriberRepo.save(subscriber1);
         Path path = Paths.get("uploads/"+subscriber1.getPhoto_url());
         byte[] bytes = Files.readAllBytes(path);
         subscriber1.setPhoto_url(Base64.getEncoder().encodeToString(bytes));
-
         return subscriber1;
     }
 
@@ -164,7 +199,7 @@ public class GymService {
         return filename.substring(filename.lastIndexOf("."));
     }
     // G. Renew subscription
-    public Subscriber renewSubscription(Integer id, LocalDate newStart, int months, Double price) {
+    public Subscriber renewSubscription(Integer id, LocalDate newStart, int months, Double price, String token) {
         Subscriber sub = subscriberRepo.findById(id).orElseThrow();
         if(newStart == null){
             newStart = sub.getSubscriptionEnd().plusDays(1);
@@ -173,8 +208,10 @@ public class GymService {
         HistoricalSubscription history = new HistoricalSubscription();
         history.setSubscriber(sub);
         history.setStartDate(newStart);
+        history.setPayDate(LocalDate.now());
         history.setEndDate(newEnd);
         history.setPrice(price);
+        logsService.saveLog("تجديد الاشتراك",jwtUtil.extractAdminName(token),sub.getName(),months,price,LocalTime.now());
         historyRepo.save(history);
 
         // Update new subscription
@@ -209,13 +246,29 @@ public class GymService {
         return ResponseEntity.ok("done");
     }
 
-    public List<Subscriber> searchByName(String name) {
-        return subscriberRepo.findByNameContainingIgnoreCase(name);
+    public List<Subscriber> searchByName(String name, String searchType) throws IOException {
+        return switch (searchType) {
+            case "expired" -> attachPicture(subscriberRepo.findExpiredByNameContainingIgnoreCase(name, LocalDate.now()));
+            case "renew" -> attachPicture(subscriberRepo.findRenewalByNameContainingIgnoreCase(name, LocalDate.now(),LocalDate.now().plusDays(3)));
+            default -> attachPicture(subscriberRepo.findByNameContainingIgnoreCase(name));
+        };
     }
 
     // 🔍 Search by ID
-    public Subscriber searchById(int id) {
-        return subscriberRepo.findById(id);
+    public Subscriber searchById(int id, String searchType) throws IOException {
+        Subscriber subscriber = null;
+        switch (searchType){
+            case "expired": subscriber = subscriberRepo.findExpiredById(id, LocalDate.now()); break;
+            case "renew": subscriber = subscriberRepo.findExpiredSoonById(id,LocalDate.now(), LocalDate.now().plusDays(3));break;
+            default: subscriber = subscriberRepo.findById(id);
+        }
+        if(subscriber == null){
+            return null;
+        }
+        Path path = Paths.get("uploads/"+subscriber.getPhoto_url());
+        byte[] bytes = Files.readAllBytes(path);
+        subscriber.setPhoto_url(Base64.getEncoder().encodeToString(bytes));
+        return subscriber;
     }
 
     public List<Attendance> getAttendanceHistory(int id) {
@@ -226,8 +279,34 @@ public class GymService {
         return historyRepo.findHistoryOfSub(id);
     }
 
-    public ResponseEntity<String> delete(int id){
-        subscriberRepo.deleteById(id);
-        return ResponseEntity.ok("done");
+    public ResponseEntity<String> delete(int id,String token){
+        Subscriber subscriber1 =  subscriberRepo.findById(id);
+        String fileName = subscriber1.getId() + ".jpg";
+        File file = new File(uploadDir,fileName);
+        if(!file.exists()){
+            subscriberRepo.deleteById(id);
+            logsService.saveLog("حذف مشترك",jwtUtil.extractAdminName(token),subscriber1.getName(),0,0.0,LocalTime.now());
+            return ResponseEntity.ok("done");
+        }
+       if( file.delete()){
+           subscriberRepo.deleteById(id);
+           logsService.saveLog("حذف مشترك",jwtUtil.extractAdminName(token),subscriber1.getName(),0,0.0,LocalTime.now());
+           return ResponseEntity.ok("done");
+       }
+       return ResponseEntity.badRequest().body("error");
+    }
+
+    public ResponseEntity<Integer> countActiveSubscribers(){
+        return ResponseEntity.ok(subscriberRepo.countActive());
+    }
+
+    public ResponseEntity<Map<String,Double>> calculateRevenue(int year, int month, int day){
+        LocalDate startDate = LocalDate.of(year, month, 1);
+        LocalDate dayDate = LocalDate.of(year, month, day);
+        LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+        Map<String,Double> map = new HashMap<>();
+        map.put("monthRevenue",historyRepo.getRevenue(startDate,endDate));
+        map.put("dayRevenue",historyRepo.getDayRevenue(dayDate));
+        return ResponseEntity.ok(map);
     }
 }
