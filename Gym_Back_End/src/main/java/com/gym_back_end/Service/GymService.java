@@ -44,15 +44,17 @@ public class GymService {
         if(this.numberSubscribers > 1){
             this.numberSubscribers = this.numberSubscribers-(LocalDate.now().getYear()*10000);
         }
+        else{
+            if(subscriberRepo.findById(1) != null){
+                numberSubscribers = 1;
+            }
+        }
         this.jwtUtil = jwtUtil;
     }
 
     // A. Get all subscribers
     public List<Subscriber> getAllSubscribers() throws IOException {
         List<Subscriber> subscribers = subscriberRepo.findAll();
-//        for(Subscriber subscriber : subscribers){
-//            System.out.println(subscriber.getPhoto_url());
-//        }
         return attachPicture(subscribers);
     }
 

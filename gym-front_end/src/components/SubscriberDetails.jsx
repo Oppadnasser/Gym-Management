@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, {useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSubscriber } from "../context/SubscriberContext";
 import { Button } from "react-bootstrap";
@@ -7,7 +7,7 @@ import axios from "axios";
 export default function SubscriberDetails() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const {subscriber, setSubscriber, admin, setAdmin} = useSubscriber();
+  const {subscriber, setSubscriber, setAdmin} = useSubscriber();
   const [attendance, setAttendance] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);

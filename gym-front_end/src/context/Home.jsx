@@ -1,6 +1,5 @@
-import React from "react";
 import Navbar from "../components/Navbar.jsx";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {Routes, Route } from "react-router-dom";
 import Expired from "../components/Expired.jsx";
 import CurrentSubscribers from "../components/CurrentSubscribers";
 import Renewal from "../components/Renewal.jsx";
